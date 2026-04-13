@@ -75,6 +75,51 @@ class ReflectionFreeDeserializerTest {
                 .body("values", is("tok_abc"));
     }
 
+    // Abstract/interface JDK collection types (concreteCollectionType falls back to
+    // HashSet/ArrayList, which aren't assignable to the declared type):
+
+    @Test
+    void invalidate_sortedSet_shouldDeserializeJsonValueWrappers() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"tokens": ["tok_abc"]}
+                        """)
+                .when()
+                .post("/sortedset-invalidate")
+                .then()
+                .statusCode(200)
+                .body("values", is("tok_abc"));
+    }
+
+    @Test
+    void batch_deque_shouldDeserializePolymorphicItems() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"items": [{"type": "type_a", "value": "hello"}]}
+                        """)
+                .when()
+                .post("/deque-batch")
+                .then()
+                .statusCode(200)
+                .body("values", is("hello"));
+    }
+
+    @Test
+    void batch_sortedMap_shouldDeserializePolymorphicItems() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"entries": {"a": {"type": "type_a", "value": "hello"}}}
+                        """)
+                .when()
+                .post("/sortedmap-batch")
+                .then()
+                .statusCode(200)
+                .body("values", is("hello"));
+    }
+
     // Guava collections (same bug, common real-world case):
 
     @Test

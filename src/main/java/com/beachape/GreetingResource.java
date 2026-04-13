@@ -1,6 +1,7 @@
 package com.beachape;
 
 import com.beachape.dto.BatchRequest;
+import com.beachape.dto.DequeBatchRequest;
 import com.beachape.dto.GreetingRequest;
 import com.beachape.dto.GuavaBatchRequest;
 import com.beachape.dto.GuavaInvalidateRequest;
@@ -8,6 +9,8 @@ import com.beachape.dto.InvalidateRequest;
 import com.beachape.dto.Item;
 import com.beachape.dto.LinkedHashSetInvalidateRequest;
 import com.beachape.dto.LinkedListBatchRequest;
+import com.beachape.dto.SortedMapRequest;
+import com.beachape.dto.SortedSetInvalidateRequest;
 import com.beachape.dto.Token;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -77,6 +80,37 @@ public class GreetingResource {
     public String linkedHashSetInvalidate(LinkedHashSetInvalidateRequest request) {
         String values = request.tokens().stream()
                 .map(Token::value)
+                .collect(Collectors.joining(","));
+        return "{\"values\":\"" + values + "\"}";
+    }
+
+    @POST
+    @Path("/sortedset-invalidate")
+    public String sortedSetInvalidate(SortedSetInvalidateRequest request) {
+        String values = request.tokens().stream()
+                .map(Token::value)
+                .collect(Collectors.joining(","));
+        return "{\"values\":\"" + values + "\"}";
+    }
+
+    @POST
+    @Path("/deque-batch")
+    public String dequeBatch(DequeBatchRequest request) {
+        String values = request.items().stream()
+                .map(item -> switch (item) {
+                    case Item.TypeA a -> a.value();
+                })
+                .collect(Collectors.joining(","));
+        return "{\"values\":\"" + values + "\"}";
+    }
+
+    @POST
+    @Path("/sortedmap-batch")
+    public String sortedMapBatch(SortedMapRequest request) {
+        String values = request.entries().values().stream()
+                .map(item -> switch (item) {
+                    case Item.TypeA a -> a.value();
+                })
                 .collect(Collectors.joining(","));
         return "{\"values\":\"" + values + "\"}";
     }
