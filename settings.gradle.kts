@@ -6,8 +6,5 @@ pluginManagement {
         gradlePluginPortal()
         mavenLocal()
     }
-    plugins {
-        id(quarkusPluginId) version quarkusPluginVersion
-    }
 }
 rootProject.name="quarkus-jackson-reflection-free-bug"
