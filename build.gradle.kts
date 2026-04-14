@@ -13,7 +13,7 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-arc")
-    implementation("com.google.guava:guava:33.5.0-jre")
+    implementation("com.google.guava:guava:33.6.0-jre")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-guava")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     testImplementation("io.quarkus:quarkus-junit5")
