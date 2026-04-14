@@ -15,6 +15,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("com.google.guava:guava:33.5.0-jre")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-guava")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
