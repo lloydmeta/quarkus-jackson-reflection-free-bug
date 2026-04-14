@@ -7,10 +7,17 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.hasKey;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class ReflectionFreeDeserializerTest {
+
+    @BeforeAll
+    static void setup() {
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+    }
 
     // -- Control cases: standard lib collections (should pass) --
 
