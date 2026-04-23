@@ -313,6 +313,74 @@ class ReflectionFreeDeserializerTest {
                 .body("label", is(nullValue()));
     }
 
+    // -- @JsonUnwrapped regression (passes when inner type has no generated serialiser) --
+    // Quarkus detects @JsonUnwrapped on PersonWithAddress and skips serialiser
+    // generation for it. Address has no generated serialiser either (no endpoint
+    // returns it directly), so standard Jackson handles everything.
+
+    @Test
+    void unwrapped_simple_shouldFlattenFields() {
+        given()
+                .when()
+                .get("/unwrapped-simple")
+                .then()
+                .statusCode(200)
+                .body("name", is("Alice"))
+                .body("city", is("London"))
+                .body("country", is("UK"))
+                .body("$", not(hasKey("address")));
+    }
+
+    // -- Bug 1: @JsonTypeInfo discriminator missing from generated serialiser --
+    // The generated serialiser for concrete subtypes doesn't write the
+    // type discriminator property defined by @JsonTypeInfo on the parent
+    // sealed interface.
+
+    @Test
+    void polymorphicItem_shouldIncludeTypeDiscriminator() {
+        given()
+                .when()
+                .get("/polymorphic-item-ser")
+                .then()
+                .statusCode(200)
+                .body("item.type", is("type_a"))
+                .body("item.value", is("hello"));
+    }
+
+    // -- Bug 2: @JsonUnwrapped broken when inner type has generated serialiser --
+    // The /detail and /error-info endpoints cause Quarkus to generate
+    // Detail$quarkusjacksonserializer and ErrorInfo$quarkusjacksonserializer.
+    // The generated serialiser for the inner type breaks @JsonUnwrapped -
+    // fields are nested instead of flattened.
+    //
+    // Both bugs compound here: discriminator missing AND fields nested.
+
+    @Test
+    void unwrapped_successResult_shouldFlattenFieldsWithDiscriminator() {
+        given()
+                .when()
+                .get("/unwrapped-result")
+                .then()
+                .statusCode(200)
+                .body("results[0].status", is("success"))
+                .body("results[0].id", is("abc"))
+                .body("results[0].value", is("hello"))
+                .body("results[0]", not(hasKey("detail")));
+    }
+
+    @Test
+    void unwrapped_failedResult_shouldFlattenFieldsWithDiscriminator() {
+        given()
+                .when()
+                .get("/unwrapped-result")
+                .then()
+                .statusCode(200)
+                .body("results[1].status", is("failed"))
+                .body("results[1].code", is("E001"))
+                .body("results[1].message", is("something went wrong"))
+                .body("results[1]", not(hasKey("error")));
+    }
+
     // -- Sanity checks (probably work) --
 
     @Test
