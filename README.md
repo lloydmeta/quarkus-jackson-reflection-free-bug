@@ -1,21 +1,38 @@
 # quarkus-jackson-reflection-free-bug
 
-Reproducer for a deserialization bug in Quarkus's build-time generated reflection-free Jackson deserialisers (`$quarkusjacksondeserializer` classes) when `quarkus.rest.jackson.optimization.enable-reflection-free-serializers=true`.
+Reproducer for bugs in Quarkus's build-time generated reflection-free Jackson (de)serialisers when `quarkus.rest.jackson.optimization.enable-reflection-free-serializers=true`.
 
-This will become the default in Quarkus 3.35 ([PR #53161](https://github.com/quarkusio/quarkus/pull/53161)).
+This became the default in Quarkus 3.35 ([PR #53161](https://github.com/quarkusio/quarkus/pull/53161)).
 
-## Background
+## Status of previous issues
 
-The [original issue (#53408)](https://github.com/quarkusio/quarkus/issues/53408) reported two bugs. [PR #53414](https://github.com/quarkusio/quarkus/pull/53414) (included in 3.34.3) fixed:
+* [#53408](https://github.com/quarkusio/quarkus/issues/53408) (collection/map type bugs) - fixed in 3.34.3 via [#53414](https://github.com/quarkusio/quarkus/pull/53414)
+* [#53588](https://github.com/quarkusio/quarkus/issues/53588) (naming strategy, `Optional<T>`, null defaults, `@JsonAnySetter`) - fixed in 3.34.6
 
-* `FAIL_ON_UNKNOWN_PROPERTIES` being silently ignored
-* Concrete non-standard JDK collections (`LinkedList`, `LinkedHashSet`) losing generic type parameters
+The repo has been bumped to Quarkus 3.34.6 (BOM) / 3.35.0 (plugin). All previously-failing tests now pass.
 
-The remaining bug affects **abstract or interface collection/map types** - both JDK (`SortedSet`, `SortedMap`, `Deque`) and third-party (Guava `ImmutableSet`, `ImmutableList`).
+## Current bugs
 
-## The bug
+### 1. `@JsonTypeInfo` discriminator missing
 
-The generated deserialiser's `concreteCollectionType()` method falls back to `HashSet`/`ArrayList`/`HashMap` when the declared type is abstract or an interface. These fallback types aren't assignable to the declared type, causing `ClassCastException` at runtime. It also means Jackson module-provided deserialisers (e.g. `jackson-datatype-guava`) are bypassed entirely.
+The generated serialiser for concrete subtypes of a `@JsonTypeInfo`-annotated sealed interface doesn't write the type discriminator property. Clients expecting standard Jackson polymorphic format can't deserialise the response.
+
+```java
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({ @JsonSubTypes.Type(value = Item.TypeA.class, name = "type_a") })
+public sealed interface Item permits Item.TypeA {
+    record TypeA(String value) implements Item {}
+}
+```
+
+* Expected: `{"item": {"type": "type_a", "value": "hello"}}`
+* Actual: `{"item": {"value": "hello"}}` - discriminator absent
+
+### 2. `@JsonUnwrapped` broken when inner type has a generated serialiser
+
+Quarkus detects `@JsonUnwrapped` on the containing type and skips serialiser generation for it (falling back to reflection). But if the **inner** (unwrapped) type has a generated `$quarkusjacksonserializer` - because some other endpoint returns that type directly - `@JsonUnwrapped` breaks and fields are nested instead of flattened. The exact mechanism isn't fully traced, but the presence of the generated serialiser for the inner type is the determining factor.
+
+The `/detail` and `/error-info` endpoints exist solely to trigger serialiser generation for `Detail` and `ErrorInfo`. Without them, `@JsonUnwrapped` works fine because the inner types use reflection-based serialisation.
 
 ## Reproducing
 
@@ -23,19 +40,16 @@ The generated deserialiser's `concreteCollectionType()` method falls back to `Ha
 ./gradlew clean test
 ```
 
-10 tests, 5 pass, 5 fail:
+25 tests total. 3 serialiser tests fail, the rest pass:
 
-| Test | Collection type | Error |
-|------|----------------|-------|
-| `invalidate_sortedSet` | `SortedSet<Token>` | `HashSet cannot be cast to SortedSet` |
-| `batch_deque` | `Deque<Item>` | `ArrayList cannot be cast to Deque` |
-| `batch_sortedMap` | `SortedMap<String, Item>` | `HashMap cannot be cast to SortedMap` |
-| `invalidate_guavaImmutableSet` | `ImmutableSet<Token>` | `HashSet cannot be cast to ImmutableSet` |
-| `batch_guavaImmutableList` | `ImmutableList<Item>` | `ArrayList cannot be cast to ImmutableList` |
-
-The `SortedSet`, `Deque`, and `SortedMap` cases are pure JDK - no external dependencies required. The Guava cases are included because they're common in real-world applications.
+| Test | Status | What it checks |
+|------|--------|---------------|
+| `unwrapped_simple_shouldFlattenFields` | PASS | `@JsonUnwrapped` works when inner type has no generated serialiser |
+| `polymorphicItem_shouldIncludeTypeDiscriminator` | **FAIL** | Bug 1: discriminator missing |
+| `unwrapped_successResult_shouldFlattenFieldsWithDiscriminator` | **FAIL** | Bug 1 + 2: discriminator missing, fields nested |
+| `unwrapped_failedResult_shouldFlattenFieldsWithDiscriminator` | **FAIL** | Bug 1 + 2: discriminator missing, fields nested |
 
 ## Requirements
 
 * Java 25
-* Quarkus 3.34.3
+* Quarkus 3.34.6
