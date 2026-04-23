@@ -1,6 +1,6 @@
 plugins {
     java
-    id("io.quarkus") version "3.34.3" // Inlined for Dependabot version management
+    id("io.quarkus") version "3.35.0" // Inlined for Dependabot version management
 }
 
 repositories {
@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-    implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:3.34.3")) // Inlined for Dependabot version management
+    implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:3.34.6")) // Inlined for Dependabot version management
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-arc")
@@ -31,4 +31,11 @@ java {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+}
+
+tasks.withType<Test> {
+    testLogging {
+        showStandardStreams = true
+        events("passed", "skipped", "failed")
+    }
 }

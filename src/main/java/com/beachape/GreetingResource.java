@@ -1,11 +1,14 @@
 package com.beachape;
 
+import com.beachape.dto.Address;
 import com.beachape.dto.AnnotationNamingRequest;
 import com.beachape.dto.AnySetterRequest;
 import com.beachape.dto.BatchRequest;
 import com.beachape.dto.DefaultValueRequest;
 import com.beachape.dto.DequeBatchRequest;
+import com.beachape.dto.Detail;
 import com.beachape.dto.EnumRequest;
+import com.beachape.dto.ErrorInfo;
 import com.beachape.dto.GreetingRequest;
 import com.beachape.dto.GuavaBatchRequest;
 import com.beachape.dto.GuavaInvalidateRequest;
@@ -17,9 +20,13 @@ import com.beachape.dto.LinkedListBatchRequest;
 import com.beachape.dto.MapperSnakeCaseRequest;
 import com.beachape.dto.OptionalItemRequest;
 import com.beachape.dto.OptionalStringRequest;
+import com.beachape.dto.PersonWithAddress;
+import com.beachape.dto.PolymorphicItemResponse;
 import com.beachape.dto.SortedMapRequest;
 import com.beachape.dto.SortedSetInvalidateRequest;
 import com.beachape.dto.Token;
+import com.beachape.dto.UnwrappedResult;
+import com.beachape.dto.UnwrappedResultsResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -27,6 +34,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -212,6 +220,50 @@ public class GreetingResource {
     @Path("/enum-status")
     public String enumStatus(EnumRequest request) {
         return "{\"values\":\"" + request.status().toWire() + "\"}";
+    }
+
+    // -- @JsonUnwrapped tests (serialisation) --
+
+    @GET
+    @Path("/unwrapped-simple")
+    public PersonWithAddress unwrappedSimple() {
+        return new PersonWithAddress("Alice", new Address("London", "UK"));
+    }
+
+    // These endpoints force Quarkus to generate $quarkusjacksonserializer for
+    // Detail and ErrorInfo. Without them, the inner types have no generated
+    // serialiser and @JsonUnwrapped works fine. With them, @JsonUnwrapped
+    // breaks (see bug 2 in tests).
+
+    @GET
+    @Path("/detail")
+    public Detail detail() {
+        return new Detail("abc", "hello");
+    }
+
+    @GET
+    @Path("/error-info")
+    public ErrorInfo errorInfo() {
+        return new ErrorInfo("E001", "something went wrong");
+    }
+
+    // -- @JsonTypeInfo serialisation test --
+
+    @GET
+    @Path("/polymorphic-item-ser")
+    public PolymorphicItemResponse polymorphicItemSer() {
+        return new PolymorphicItemResponse(new Item.TypeA("hello"));
+    }
+
+    // -- @JsonTypeInfo + @JsonUnwrapped combined --
+
+    @GET
+    @Path("/unwrapped-result")
+    public UnwrappedResultsResponse unwrappedResult() {
+        return new UnwrappedResultsResponse(List.of(
+            new UnwrappedResult.Success(new Detail("abc", "hello")),
+            new UnwrappedResult.Failed(new ErrorInfo("E001", "something went wrong"))
+        ));
     }
 
     // -- Existing --
