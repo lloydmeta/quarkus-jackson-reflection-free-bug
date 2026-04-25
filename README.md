@@ -7,6 +7,7 @@ This became the default in Quarkus 3.35 ([PR #53161](https://github.com/quarkusi
 ## Status of previous issues
 
 * [#53408](https://github.com/quarkusio/quarkus/issues/53408) (collection/map type bugs) - fixed in 3.34.3 via [#53414](https://github.com/quarkusio/quarkus/pull/53414)
+* [#53556](https://github.com/quarkusio/quarkus/issues/53556) ClassCastException with abstract/interface collection and map types) - fixed in 3.34.5
 * [#53588](https://github.com/quarkusio/quarkus/issues/53588) (naming strategy, `Optional<T>`, null defaults, `@JsonAnySetter`) - fixed in 3.34.6
 
 The repo has been bumped to Quarkus 3.34.6 (BOM) / 3.35.0 (plugin). All previously-failing tests now pass.
