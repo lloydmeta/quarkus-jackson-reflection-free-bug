@@ -175,6 +175,23 @@ class ReflectionFreeDeserializerTest {
                 .statusCode(400);
     }
 
+    // -- Bug B.2: the unknown-field rejection throws a plain JsonMappingException, not a
+    // MismatchedInputException.
+
+    @Test
+    void unknownField_shouldReachCustomMismatchedInputExceptionMapper() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"name": "world", "evil": "data"}
+                        """)
+                .when()
+                .post("/greeting")
+                .then()
+                .statusCode(422)
+                .body("handledBy", is("MismatchedInputExceptionMapper"));
+    }
+
     // -- Bug C: PropertyNamingStrategy ignored --
     // The codegen derives field names at build time from raw Java names.
     // Neither ObjectMapper-level setPropertyNamingStrategy() nor class-level
