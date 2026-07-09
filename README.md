@@ -46,7 +46,7 @@ Tracked in [#55255](https://github.com/quarkusio/quarkus/issues/55255).
 | Test | Status | What it checks |
 |------|--------|---------------|
 | `unknownField_shouldReachCustomMismatchedInputExceptionMapper` | **FAIL** | unknown field throws a plain `JsonMappingException`; custom `ExceptionMapper<MismatchedInputException>` bypassed (`400` instead of `422`) |
-| `greeting_shouldRejectUnknownFields` | PASS | unknown field is rejected with `400` (#53408, fixed) |
+| `greeting_shouldRejectUnknownFields` | PASS | unknown field is rejected with `422` (#53408, fixed) |
 | `polymorphicItem_shouldIncludeTypeDiscriminator` | PASS | #53765 (fixed) |
 | `unwrapped_successResult_shouldFlattenFieldsWithDiscriminator` | PASS | #53765 (fixed) |
 | `unwrapped_failedResult_shouldFlattenFieldsWithDiscriminator` | PASS | #53765 (fixed) |

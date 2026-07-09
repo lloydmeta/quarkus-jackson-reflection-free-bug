@@ -1,15 +1,15 @@
 package com.beachape;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.hasKey;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.given;
 
 @QuarkusTest
 class ReflectionFreeDeserializerTest {
@@ -172,7 +172,7 @@ class ReflectionFreeDeserializerTest {
                 .when()
                 .post("/greeting")
                 .then()
-                .statusCode(400);
+                .statusCode(422);
     }
 
     // -- Bug B.2: the unknown-field rejection throws a plain JsonMappingException, not a
